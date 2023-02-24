@@ -1,0 +1,25 @@
+; MIT License Copyright (c) 2023 Hiroshi Shimamoto
+
+.program smoothblink
+.side_set 1 opt
+
+	pull noblock side 0	; if empty x->osr
+	mov x, osr		; osr->x
+	mov y, isr		; isr->y
+innerloop:
+	jmp x!=y noset
+	jmp skip side 1
+noset:
+	nop
+skip:
+	jmp y-- innerloop
+
+% c-sdk {
+static inline void smoothblink_program_init(PIO pio, uint sm, uint offset, uint pin) {
+	pio_gpio_init(pio, pin);
+	pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+	pio_sm_config c = smoothblink_program_get_default_config(offset);
+	sm_config_set_sideset_pins(&c, pin);
+	pio_sm_init(pio, sm, offset, &c);
+}
+%}
